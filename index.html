@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selma Abla'ya Özel</title>
+    <style>
+        /* TEMEL STİL VE RENK PALETİ */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fce3e6 0%, #aed5e2 100%); 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; 
+            color: #333;
+            transition: background 1s ease;
+        }
+
+        /* SORU VE KUTU STİLİ */
+        .question-box {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px 20px;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            max-width: 90%;
+            z-index: 10;
+        }
+
+        h1 {
+            color: #d81b60;
+            font-size: 1.6em; 
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* BUTON KONTEYNERİ */
+        .buttons-container {
+            /* Butonlar başlangıçta ortalanmış olarak yan yana duracak */
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center;
+            width: 100%; 
+            max-width: 350px; 
+            height: 50px; 
+            margin: 0 auto;
+            position: relative; 
+            z-index: 5;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            position: relative; 
+            transition: all 0.2s ease;
+        }
+
+        #yesButton {
+            background-color: #039be5;
+            color: white;
+            z-index: 15; 
+        }
+
+        #noButton {
+            background-color: #ff7043;
+            color: white;
+            transition: all 0.1s ease;
+            z-index: 10; 
+        }
+
+        /* SONUÇ MESAJI STİLİ */
+        #resultMessage {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 1s ease-in, transform 1s ease-in;
+            max-width: 90%;
+            text-align: center;
+            position: relative; 
+            z-index: 10;
+            color: #333;
+        }
+
+        #resultMessage.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #resultMessage p {
+            color: #d81b60;
+            text-shadow: 0.5px 0.5px 0px rgba(0, 0, 0, 0.05);
+        }
+
+        .sender-info {
+            display: block;
+            margin-top: 25px;
+            font-size: 0.9em;
+            color: #555;
+            font-style: italic;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+        
+        /* KUTLAMA EMOJİLERİ */
+        .confetti, .heart, .extra-emoji {
+            position: fixed; 
+            pointer-events: none;
+            z-index: 1; 
+        }
+        .confetti { width: 8px; height: 8px; background-color: var(--color); opacity: 0; animation: confetti-fall var(--duration) infinite linear; border-radius: 50%; }
+        @keyframes confetti-fall { 0% { transform: translateY(-100px) rotateZ(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotateZ(720deg); opacity: 1; } }
+        .heart { font-size: 2em; color: #ff0066; opacity: 0.8; animation: heart-float 4s infinite ease-in-out; }
+        @keyframes heart-float { 0% { transform: translateY(0) scale(1); opacity: 0.8;} 50% { transform: translateY(-30px) scale(1.1); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 0.8; } }
+        .extra-emoji { font-size: 3em; opacity: 0.5; animation: emoji-float var(--duration) infinite ease-in-out; }
+        @keyframes emoji-float { 0% { transform: translateY(0) rotate(0deg); opacity: 0.5; } 50% { transform: translateY(-20px) rotate(10deg); } 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; } }
+    </style>
+</head>
+<body>
+
+    <div class="question-box" id="questionBox">
+        <h1>Dünyanın En İyi Ablası Sen Misin, Selma?</h1>
+        
+        <div class="buttons-container">
+            <button id="yesButton">Yanii, sanırım benim 🤭</button> 
+            <button id="noButton">Hayır, Ben Değilim... 🥺</button>
+        </div>
+    </div>
+
+    <div id="resultMessage"></div>
+
+    <script>
+        const noButton = document.getElementById('noButton');
+        const yesButton = document.getElementById('yesButton');
+        const questionBox = document.getElementById('questionBox');
+        const resultMessageDiv = document.getElementById('resultMessage');
+        const buttonsContainer = document.querySelector('.buttons-container');
+
+        // HAYIR butonunu yer değiştirten fonksiyon
+        noButton.addEventListener('click', moveNoButton);
+
+        function moveNoButton() {
+            // Butonu, questionBox içinde hareket ettireceğiz
+            noButton.style.position = 'absolute';
+            
+            const boxRect = questionBox.getBoundingClientRect(); 
+            const buttonRect = noButton.getBoundingClientRect();
+
+            // Sınırları hesapla: Question Box'ın içindeki paddingi düşüyoruz
+            const padding = 20;
+            const maxX = boxRect.width - buttonRect.width - (padding * 2);
+            const maxY = boxRect.height - buttonRect.height - (padding * 2);
+
+            // EVET butonunun questionBox'a göre konumunu alıyoruz
+            const yesRect = yesButton.getBoundingClientRect();
+            const yesLeftRel = yesRect.left - boxRect.left; 
+            const yesTopRel = yesRect.top - boxRect.top;   
+            
+            let newX, newY;
+            let overlap = true;
+            let attempts = 0;
+            const safetyMargin = 30; 
+
+            // Kaçışta button-container'ın flex ayarlarını temizliyoruz
+            noButton.style.right = 'auto'; 
+            noButton.style.top = 'auto';
+            noButton.style.bottom = 'auto'; // Butonun kaçışta alta sabit kalmasını önlemek için
+
+            // Çakışma kontrolü
+            while (overlap && attempts < 50) {
+                newX = Math.random() * maxX + padding;
+                newY = Math.random() * maxY + padding;
+
+                // EVET butonu alanını kontrol et (Hem X hem Y ekseninde çakışmamalı)
+                const isOverlappingX = newX < (yesLeftRel + yesRect.width + safetyMargin);
+                // Y ekseninde çakışma kontrolü: Evet butonu y ekseni aralığında mı?
+                const isOverlappingY = newY < (yesTopRel + yesRect.height + safetyMargin) && newY > (yesTopRel - buttonRect.height - safetyMargin);
+                
+                if (isOverlappingX && isOverlappingY) {
+                    overlap = true; 
+                } else {
+                    overlap = false;
+                }
+                attempts++;
+            }
+            
+            // Konumu "question-box"a göre ayarla
+            noButton.style.left = `${newX}px`;
+            noButton.style.top = `${newY}px`;
+        }
+        
+        // EVET butonuna tıklanınca olacaklar
+        yesButton.addEventListener('click', () => {
+            questionBox.style.display = 'none';
+            document.body.style.background = 'linear-gradient(135deg, #aed5e2 0%, #fce3e6 100%)'; 
+
+            resultMessageDiv.innerHTML = `
+                <p style="font-size: 2em; color: #d81b60; margin-bottom: 5px; font-weight: bold;">
+                    Heeehh beklediğim cevap buyduu!
+                </p>
+                <p style="font-size: 2em; color: #d81b60; margin-bottom: 20px; font-weight: bold;">
+                    TEŞEKKÜRLERRR SELMACANNN!
+                </p>
+                <p style="margin-top: 15px;">
+                    Allah seni başımızdan eksik etmesin reis
+                </p>
+                <p style="margin-top: 15px; font-weight: bold; font-size: 1.7em;">
+                    Çok iyi birisin, iyi ki varsın Selmacan!
+                </p>
+                <span class="sender-info">
+                    Kardeşin 01BİLOCAN'dan Selma Ablasına
+                </span>
+            `;
+
+            resultMessageDiv.classList.add('show');
+            createCelebration(true); 
+        });
+
+        // KUTLAMA MANTIĞI (Sürekli)
+        function createCelebration(isGrand) {
+            const colors = ['#d81b60', '#039be5', '#ff7043', '#aed5e2', '#FFC107', '#4CAF50'];
+            
+            const confettiCount = isGrand ? 150 : 60; 
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.setProperty('--color', colors[Math.floor(Math.random() * colors.length)]);
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.setProperty('--duration', `${Math.random() * 2 + 3}s`);
+                confetti.style.animationDelay = `${-Math.random() * 5}s`;
+                document.body.appendChild(confetti);
+            }
+
+            const heartCount = isGrand ? 40 : 20; 
+            for (let i = 0; i < heartCount; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+                heart.innerHTML = '❤️';
+                heart.style.left = `${Math.random() * 100}vw`;
+                heart.style.top = `${Math.random() * 100}vh`;
+                heart.style.animationDelay = `${-Math.random() * 4}s`;
+                document.body.appendChild(heart);
+            }
+            
+            if (isGrand) {
+                const extraEmojis = ['🌟', '👑', '💖', '🎁', '💐'];
+                for (let i = 0; i < 30; i++) {
+                    const extraEmoji = document.createElement('div');
+                    extraEmoji.classList.add('extra-emoji');
+                    extraEmoji.innerHTML = extraEmojis[Math.floor(Math.random() * extraEmojis.length)];
+                    extraEmoji.style.left = `${Math.random() * 100}vw`;
+                    extraEmoji.style.top = `${Math.random() * 100}vh`; 
+                    extraEmoji.style.setProperty('--duration', `${Math.random() * 3 + 5}s`);
+                    extraEmoji.style.animationDelay = `${-Math.random() * 5}s`;
+                    document.body.appendChild(extraEmoji);
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
